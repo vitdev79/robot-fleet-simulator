@@ -1,27 +1,42 @@
 import { Robot } from "./robot.js";
 
-export class WorkerBot extends Robot {
-  constructor(name, power) {
-    super(name, power);
+export class BuilderBot extends Robot {
+  constructor({ name, maxPower }) {
+    super({ name, maxPower });
   }
 
-  performTask() {
-    const success = super.performTask();
-    if (!success || this.status === "damaged") return false;
-    console.log(`${this.name}: Building structure...`);
-    return true;
+  performTask(task) {
+    if (task.category !== "Construction") {
+      return {
+        completed: false,
+        message: `${this.name} can only perform Construction tasks`,
+      };
+    }
+    const result = super.performTask(task);
+    if (result.completed) {
+      console.log(`${this.name}: Building structure...`);
+    }
+    return result;
   }
 }
 
 export class ScoutBot extends Robot {
-  constructor(name, power) {
-    super(name, power);
+  constructor(name, maxPower) {
+    super(name, maxPower);
   }
 
-  performTask() {
-    const success = super.performTask();
-    if (!success || this.status === "damaged") return false;
-    console.log(`${this.name}: Exploring terrain...`);
-    return true;
+  performTask(task) {
+    if (task.category !== "Exploration") {
+      return {
+        completed: false,
+        message: `${this.name} can only perform Exploration tasks`,
+      };
+    }
+    const result = super.performTask(task);
+
+    if (result.completed) {
+      console.log(`${this.name}: Exploring terrain...`);
+    }
+    return result;
   }
 }

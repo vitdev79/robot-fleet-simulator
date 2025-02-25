@@ -1,18 +1,18 @@
 import { Robot } from "./robot.js";
-import { WorkerBot, ScoutBot } from "./robotTypes.js";
+import { ScoutBot, BuilderBot } from "./robotTypes.js";
 
 export class RobotFactory {
-  static create(type, name, power) {
+  static create(type, { name, maxPower }) {
     let bot;
     switch (type) {
       case "robot":
-        bot = new Robot(name, power);
+        bot = new Robot({ name, maxPower });
         break;
-      case "worker":
-        bot = new WorkerBot(name, power);
+      case "builder":
+        bot = new BuilderBot({ name, maxPower });
         break;
       case "scout":
-        bot = new ScoutBot(name, power);
+        bot = new ScoutBot({ name, maxPower });
         break;
       default:
         throw new Error(`Unknown robot type ${type}`);

@@ -1,15 +1,23 @@
 import { FleetCommand } from "./fleetCommand.js";
 
 export class Robot {
+  static #nextId = 1;
+  #id;
   #status = "active";
   #fleetCommand = FleetCommand.getInstance(); // Singleton ref
 
-  constructor(name, power) {
-    if (!name || power === undefined)
+  constructor({ name, maxPower }) {
+    if (!name || maxPower === undefined)
       throw new Error(`Name and power are required.`);
-    this.name = name;
-    this.power = power;
+    this.#id = Robot.#nextId++;
+    this.name = `${name}-${String(this.#id).padStart(2, "0")}`;
+    this.maxPower = maxPower;
+    this.power = maxPower;
     this.#fleetCommand.addRobot(this); // Auto-add to fleet
+  }
+
+  get id() {
+    return this.#id;
   }
 
   get status() {
@@ -17,7 +25,7 @@ export class Robot {
   }
 
   set status(newStatus) {
-    const statuses = ["active", "damaged"];
+    const statuses = ["active", "broken", "busy"];
     if (newStatus !== this.#status && statuses.includes(newStatus)) {
       this.#status = newStatus;
       this.#fleetCommand.notify({ name: this.name, status: this.#status });
@@ -26,33 +34,82 @@ export class Robot {
     }
   }
 
-  repair() {
-    if (this.#status !== "damaged") {
+  async repair() {
+    if (this.#status !== "broken") {
       console.log(`${this.name} does not need repair.`);
-    } else {
-      this.#fleetCommand.notify({
-        name: this.name,
-        status: this.#status,
-        action: "repairing",
-      });
+      return;
+    }
+
+    this.#fleetCommand.notify({
+      name: this.name,
+      status: this.#status,
+      action: "repairing",
+    });
+
+    await new Promise((resolve) => {
       setTimeout(() => {
         this.status = "active";
+        const powerThreshold = this.maxPower * 0.75;
+        if (this.power < powerThreshold) {
+          this.recharge();
+        }
         console.log(`${this.name} has been repaired.`);
-      }, 3000);
-    }
+        resolve();
+      }, 7000);
+    });
   }
 
-  performTask() {
-    if (this.#status === "damaged") {
-      console.log(`${this.name}: Damaged - cannot perform task.`);
-      return false;
+  async performTask(task) {
+    this.status = "busy";
+    this.power -= task.powerCost;
+    console.log(`${this.name}: Performing ${task.name} (Power: ${this.power})`);
+
+    if (Math.random() < 0.1) {
+      this.status = "broken";
+      this.#fleetCommand.requeueTask(task);
+      return {
+        completed: false,
+        message: `${this.name} broke during ${task.name}`,
+      };
     }
-    this.power -= 20;
-    console.log(`${this.name}: Task in progress...(Power: ${this.power})`);
-    if (this.power <= 0 || Math.random() < 0.3) {
-      this.status = "damaged";
-      return false;
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        this.status = "active";
+        resolve();
+      }, 5000);
+    });
+
+    return { completed: true, message: `${this.name} completed ${task.name}` };
+  }
+
+  async recharge() {
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        this.power = this.maxPower;
+        console.log(`${this.name} recharged to ${this.power}`);
+        this.#fleetCommand.notify({ name: this.name, status: this.#status });
+        resolve();
+      }, 5000);
+    });
+  }
+
+  async performDiagnostics() {
+    if (this.#status !== "active") return;
+    const task = this.#fleetCommand.getTaskForRobot(this, false); // Peek only
+    if (!task) return;
+
+    if (this.power < task.powerCost) {
+      await this.recharge();
+      return;
     }
-    return true;
+
+    const confirmedTask = this.#fleetCommand.getTaskForRobot(this, true);
+    if (confirmedTask) {
+      const result = await this.performTask(confirmedTask);
+      console.log(result);
+      if (!result.completed && this.status === "broken") {
+        await this.repair();
+      }
+    }
   }
 }

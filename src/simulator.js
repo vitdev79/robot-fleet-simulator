@@ -1,10 +1,10 @@
 import { RobotFactory } from "./robotFactory.js";
-import { withLaser, withShield } from "./decorators.js";
+import { withLaser, withShield, withEfficiencyUpgrade } from "./decorators.js";
 import { FleetCommand } from "./fleetCommand.js";
 
 const fleet = FleetCommand.getInstance();
-fleet.subscribe(repairLogger);
 fleet.subscribe(statusLogger);
+fleet.subscribe(repairLogger);
 
 function repairLogger(update) {
   if (update.action === "repairing") {
@@ -15,23 +15,17 @@ function statusLogger(update) {
   console.log(`Status update: ${update.name} is ${update.status}`);
 }
 
-const bot = RobotFactory.create("robot", "Worker-01", 100);
-const workerBot = RobotFactory.create("worker", "Builder-01", 100);
-const laserAndShieldScout = withShield(
-  withLaser(RobotFactory.create("scout", "Scout-01", 100))
-);
+const bots = {
+  robot: { name: "Worker", maxPower: 100 },
+  builder: { name: "Builder", maxPower: 100 },
+  scout: { name: "Scout", maxPower: 100 },
+};
 
-bot.performTask();
-workerBot.performTask();
-laserAndShieldScout.performTask();
-laserAndShieldScout.performTask();
-laserAndShieldScout.performTask();
-laserAndShieldScout.performTask();
-laserAndShieldScout.performTask();
+console.log(bots.scout.maxPower);
 
-fleet.fleetStatus();
+RobotFactory.create("robot", bots.robot);
+RobotFactory.create("robot", bots.robot);
+withEfficiencyUpgrade(RobotFactory.create("builder", bots.builder));
+withShield(withLaser(RobotFactory.create("scout", bots.scout)));
 
-setTimeout(() => {
-  laserAndShieldScout.repair();
-  setTimeout(() => fleet.fleetStatus(), 4000); // Wait for repair
-}, 1000);
+fleet.startSimulation();

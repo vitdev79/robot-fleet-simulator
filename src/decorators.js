@@ -1,32 +1,24 @@
 export function withLaser(robot) {
-  const originalPerformTask = robot.performTask;
-
-  robot.performTask = function () {
-    const success = originalPerformTask.call(this);
-    if (!success) return false; // Stop if base task fails
-    console.log(`${this.name}: Firing laser!`);
-    return true;
-  };
+  console.log(`${robot.name} is armed with laser`);
   return robot;
 }
 
 export function withShield(robot) {
-  const originalPerformTask = robot.performTask;
+  console.log(`${robot.name} is protected by shield`);
+  return robot;
+}
 
-  robot.performTask = function () {
-    if (this.status === "damaged") {
-      console.log(`${this.name}: Damaged - cannot perform task.`);
-      return false;
-    }
-    this.power += 10; // Reduce drain
-    const success = originalPerformTask.call(this);
-    if (!success) return false;
-    console.log(`${this.name}: Shield protection.`);
-    if (this.status !== "damaged" && Math.random() < 0.1) {
-      this.status = "damaged";
-      return false;
-    }
-    return true;
+export function withEfficiencyUpgrade(robot) {
+  const originalPerformTask = robot.performTask;
+  robot.performTask = function (task) {
+    const reducedTask = {
+      ...task,
+      powerCost: Math.floor(task.powerCost * 0.7),
+    }; // 30% less power
+    console.log(
+      `${this.name}: Efficiency upgrade applied, reduced power cost to ${reducedTask.powerCost}`
+    );
+    return originalPerformTask.call(this, reducedTask);
   };
   return robot;
 }
