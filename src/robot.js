@@ -13,7 +13,7 @@ export class Robot {
     this.name = `${name}-${String(this.#id).padStart(2, "0")}`;
     this.maxPower = maxPower;
     this.power = maxPower;
-    this.#fleetCommand.addRobot(this); // Auto-add to fleet
+    // this.#fleetCommand.addRobot(this); // Auto-add to fleet
   }
 
   get id() {
@@ -106,7 +106,6 @@ export class Robot {
     const confirmedTask = this.#fleetCommand.getTaskForRobot(this, true);
     if (confirmedTask) {
       const result = await this.performTask(confirmedTask);
-      console.log(result);
       if (!result.completed && this.status === "broken") {
         await this.repair();
       }

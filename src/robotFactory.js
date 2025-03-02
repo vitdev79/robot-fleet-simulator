@@ -2,7 +2,7 @@ import { Robot } from "./robot.js";
 import { ScoutBot, BuilderBot } from "./robotTypes.js";
 
 export class RobotFactory {
-  static create(type, { name, maxPower }) {
+  static create(type, { name, maxPower }, decorators = []) {
     let bot;
     switch (type) {
       case "robot":
@@ -17,6 +17,6 @@ export class RobotFactory {
       default:
         throw new Error(`Unknown robot type ${type}`);
     }
-    return bot;
+    return decorators.reduce((robot, decorator) => decorator(robot), bot);
   }
 }

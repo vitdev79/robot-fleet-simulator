@@ -1,8 +1,14 @@
 import { RobotFactory } from "./robotFactory.js";
 import { withLaser, withShield, withEfficiencyUpgrade } from "./decorators.js";
 import { FleetCommand } from "./fleetCommand.js";
+import { TaskStation } from "./taskStation.js";
 
-const fleet = FleetCommand.getInstance();
+const taskStationFactory = {
+  create: () => new TaskStation(),
+};
+const robotFactory = RobotFactory;
+
+const fleet = FleetCommand.getInstance(robotFactory, taskStationFactory);
 fleet.subscribe(statusLogger);
 fleet.subscribe(repairLogger);
 
@@ -23,9 +29,9 @@ const bots = {
 
 console.log(bots.scout.maxPower);
 
-RobotFactory.create("robot", bots.robot);
-RobotFactory.create("robot", bots.robot);
-withEfficiencyUpgrade(RobotFactory.create("builder", bots.builder));
-withShield(withLaser(RobotFactory.create("scout", bots.scout)));
+fleet.addRobot("robot", { name: "Worker", maxPower: 100 });
+fleet.addRobot("robot", bots.robot);
+fleet.addRobot("builder", bots.builder, [withEfficiencyUpgrade]);
+fleet.addRobot("scout", bots.scout, [withShield, withLaser]);
 
 fleet.startSimulation();

@@ -2,26 +2,32 @@ import { TaskStation } from "./taskStation.js";
 
 export class FleetCommand {
   static #instance = null;
+  #robotFactory;
   #robots = [];
   #observers = [];
-  #taskStation = new TaskStation();
+  #taskStation;
 
-  constructor() {
-    if (FleetCommand.#instance)
-      throw new Error(
-        `Use FleetCommand.getInstance() instead new FleetCommand().`
-      );
-    FleetCommand.#instance = this;
-  }
-
-  static getInstance() {
+  static getInstance(robotFactory, taskStation) {
     if (!FleetCommand.#instance) {
-      FleetCommand.#instance = new FleetCommand();
+      FleetCommand.#instance = new FleetCommand(robotFactory, taskStation);
+    } else if (robotFactory) {
+      throw new Error("FleetCommand already initialized—use without factory.");
     }
     return FleetCommand.#instance;
   }
 
-  addRobot(robot) {
+  constructor(robotFactory, taskStationFactory) {
+    if (FleetCommand.#instance)
+      throw new Error(
+        `Use FleetCommand.getInstance() instead new FleetCommand().`
+      );
+    this.#robotFactory = robotFactory;
+    this.#taskStation = taskStationFactory.create();
+    FleetCommand.#instance = this;
+  }
+
+  addRobot(type, config, decorators) {
+    const robot = this.#robotFactory.create(type, config, decorators);
     this.#robots.push(robot);
     console.log(
       `${robot.name} added to fleet. Total robots: ${this.#robots.length}`
